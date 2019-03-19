@@ -13,7 +13,6 @@ public class UserDAO {
 
     public UserDTO getUser(String username, String password) {
         UserDTO foundUser = null;
-
         try (
                 Connection connection = connectionFactory.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(
@@ -29,7 +28,7 @@ public class UserDAO {
                 foundUser.setPassword(password);
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SpotitubePersistenceException(e);
         }
         return foundUser;
     }

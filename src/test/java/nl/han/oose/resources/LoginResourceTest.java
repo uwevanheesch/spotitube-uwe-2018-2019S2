@@ -1,71 +1,57 @@
 package nl.han.oose.resources;
 
-import nl.han.oose.dto.ErrorDTO;
 import nl.han.oose.dto.TokenDTO;
 import nl.han.oose.dto.UserDTO;
-import nl.han.oose.persistence.UserDAO;
-import org.junit.jupiter.api.BeforeEach;
+import nl.han.oose.service.AuthenticationService;
+import nl.han.oose.service.SpotitubeLoginException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class LoginResourceTest {
 
     @Mock
-    private UserDAO userDAOStub;
+    private AuthenticationService authenticationService;
 
     @InjectMocks
     private LoginResource sut;
-    private UserDTO mockedUser;
-
-    @BeforeEach
-    void setUp() {
-        // You can still make use of the BeforeEach, but make sure you
-        // do NOT create a new instance of sut, otherwise the mocks will
-        // not be used.
-        mockedUser = new UserDTO();
-        mockedUser.setName("Test Testuser");
-        mockedUser.setPassword("testpassword");
-        mockedUser.setUser("testuser");
-    }
 
     @Test
     void loginSuccess() {
-        makeUserDAOMockReturnPreDefinedUserDTO();
+        when(authenticationService.login("uwe", "uwepass"))
+                .thenReturn(new TokenDTO("1234", "Testuser"));
 
-        UserDTO userDTO = new UserDTO("testuser", "testpassword");
+        UserDTO userDTO = new UserDTO("uwe", "uwepass");
         Response actualResult = sut.login(userDTO);
 
         assertEquals(Status.OK.getStatusCode(), actualResult.getStatus());
 
         TokenDTO actualToken = (TokenDTO) actualResult.getEntity();
-        assertEquals("Test Testuser", actualToken.getUser());
+        assertEquals("Testuser", actualToken.getUser());
         assertEquals("1234", actualToken.getToken());
-    }
-
-    private void makeUserDAOMockReturnPreDefinedUserDTO() {
-        Mockito.when(userDAOStub.getUser("testuser", "testpassword"))
-                .thenReturn(mockedUser);
     }
 
     @Test
     void loginFailure() {
+        when(authenticationService.login(anyString(), anyString()))
+                .thenThrow(new SpotitubeLoginException("Login failed for user."));
         UserDTO userDTO = new UserDTO("Uwe", "WrongPassword");
+        SpotitubeLoginException spotitubeLoginException = assertThrows(SpotitubeLoginException.class, () -> {
+            Response actualResult = sut.login(new UserDTO("uwe", "uwepass"));
+        });
 
-        Response actualResult = sut.login(userDTO);
-        assertEquals(Status.UNAUTHORIZED.getStatusCode(), actualResult.getStatus());
-
-        ErrorDTO actualDTO = (ErrorDTO) actualResult.getEntity();
-        assertEquals("Login failed for user Uwe", actualDTO.getMessage());
+        assertEquals("Login failed for user.", spotitubeLoginException.getMessage());
     }
 
 

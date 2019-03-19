@@ -9,7 +9,7 @@ class ConnectionFactory {
     private static final String CONNECTION_URL = "jdbc:mysql://localhost:3306/spotitube?useSSL=false";
     private static final String DB_USER = "uwe";
     private static final String DB_PASS = "uwepass";
-    private static final String MYSQL_JDBC_DRIVER = "com.mysql.jdbc.Driver";
+    private static final String MYSQL_JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
 
     static {
         try {
@@ -25,7 +25,7 @@ class ConnectionFactory {
                     DB_USER,
                     DB_PASS);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SpotitubePersistenceException(e);
         }
     }
 
